@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/FinancialDataAnalysisTool.styles.css" asp-append-version="true" />
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/your_version/dataTables.your_theme.css">
 </head>
 <body>
     <header>
@@ -38,11 +41,17 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2023 - FinancialDataAnalysisTool - <a asp-area="" asp-controller="Home" asp-action="PlotChart">Privacy</a>
+            &copy; 2023 - FinancialDataAnalysisTool - <a asp-area="" asp-controller="Home" asp-action="RenderChart">Privacy</a>
         </div>
     </footer>
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+@* <!-- jQuery -->
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script> *@
+
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

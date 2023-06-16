@@ -5,6 +5,7 @@ using FinancialDataAnalysisTool.Models;
 using OfficeOpenXml;
 using System.Linq;
 using System.Text.Json;
+using System.Globalization;
 
 namespace FinancialDataAnalysisTool.Controllers;
 
@@ -24,12 +25,18 @@ public class HomeController : Controller
     {
         var model = new DataViewModel();
         model.Symbols = LoadSymbols();
+        model.StockPrices = LoadStockPrices();
         return View(model);
     }
 
     public IActionResult PlotChart()
     {
         var stockPrices = LoadStockPrices();
+        foreach (var c in stockPrices)
+        {
+            Console.WriteLine(c.Date);
+
+        }
         var symbols = stockPrices.Select(s => s.Symbol).Distinct().ToList();
 
         var volatilityData = new List<ChartData>();
@@ -48,24 +55,24 @@ public class HomeController : Controller
                 DataPoints = returns.Select(r => new DataPoint(r.Date.ToString("yyyy-MM-dd"), (double)r.Return)).ToList()
             };
             List<DataPoint> data = new List<DataPoint>();
-             DataPoint d = new DataPoint("",volatility)
-             {
-                    Date = "",
-                    Value = volatility
-                    };
-                    data.Add(d);
+            DataPoint d = new DataPoint("", volatility)
+            {
+                Date = "",
+                Value = volatility
+            };
+            data.Add(d);
             var volatilityChartData = new ChartData
             {
                 Symbol = symbol,
                 DataPoints = data
-               //.Select(v => new DataPoint(v.Date.ToString("yyyy-MM-dd"), (double)v.Value)).ToList()
+                //.Select(v => new DataPoint(v.Date.ToString("yyyy-MM-dd"), (double)v.Value)).ToList()
             };
             var correlationChartData = new ChartData
             {
                 Symbol = symbol,
                 DataPoints = correlations
                     .Where(c => c.SymbolA == symbol)
-                    .Select(c => new DataPoint(c.SymbolA, (double)c.Correlation))
+                    .Select(c => new DataPoint(c.SymbolA ?? symbol, (double)c.Correlation))
                     .ToList()
             };
 
@@ -89,7 +96,12 @@ public class HomeController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
-
+    [HttpGet]
+    public IActionResult LoadStockPricesData()
+    {
+        var stockPrices = LoadStockPrices(); // Implement this method to retrieve stock prices data
+        return Json(stockPrices);
+    }
 
     [HttpPost]
     public IActionResult CalculateReturn(string symbol)
@@ -227,16 +239,6 @@ public class HomeController : Controller
         using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
         {
             var sheet = package.Workbook.Worksheets["stock_prices"];
-            // Get all worksheets in the workbook
-            // var worksheets = package.Workbook.Worksheets;
-
-            // // Iterate over each worksheet and retrieve the name
-            // foreach (var worksheet in worksheets)
-            // {
-            //     var worksheetName = worksheet.Name;
-            //     // Do something with the worksheet name
-            //     Console.WriteLine(" reeding worksheet  ' " + worksheetName);
-            // }
 
             if (sheet.Dimension == null)
             {
@@ -253,7 +255,6 @@ public class HomeController : Controller
 
                 if (!string.IsNullOrEmpty(symbol) && !symbols.Contains(symbol))
                 {
-                    Console.WriteLine(" reeding worksheet symbols ' " + symbol);
                     symbols.Add(symbol);
                 }
             }
@@ -261,134 +262,55 @@ public class HomeController : Controller
         return symbols;
     }
 
-
-    // private List<string> LoadSymbols()
-    // {
-    //     // Load symbols from stock_prices sheet
-    //     var symbols = new List<string>();
-    //     using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
-    //     {
-    //         var sheet = package.Workbook.Worksheets["stock_prices"];
-    //          Console.WriteLine("Check!  @");
-    //         var rowCount = sheet.Dimension.Rows;
-    //         for (int i = 2; i <= rowCount; i++)
-    //         {
-    //             var symbol = sheet.Cells[i, 1].Value?.ToString();
-    //             if (!string.IsNullOrEmpty(symbol) && !symbols.Contains(symbol))
-    //             {
-    //                 symbols.Add(symbol);
-    //             }
-    //         }
-    //     }
-    //     return symbols;
-    // }
-
     private List<StockPrice> LoadStockPrices()
     {
-        // Load stock prices from stock_prices sheet
-
         var stockPrices = new List<StockPrice>();
-        var stock = new StockPrice();
-        try
+
+        using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
         {
+            var sheet = package.Workbook.Worksheets["stock_prices"];
+            var rowCount = sheet.Dimension.Rows;
 
-            // using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
-            // {
-            //     var sheet = package.Workbook.Worksheets["stock_prices"];
-            //     var rowCount = sheet.Dimension.Rows;
-            //     for (int i = 2; i <= rowCount; i++)
-            //     {
-            //         var stockPrice = new StockPrice
-            //         {
-            //             Symbol = sheet.Cells[i, 1].Value?.ToString(),
-            //             Date = DateTime.Parse(sheet.Cells[i, 2].Value?.ToString()),
-            //             Open = decimal.Parse(sheet.Cells[i, 3].Value?.ToString()),
-            //             High = decimal.Parse(sheet.Cells[i, 4].Value?.ToString()),
-            //             Low = decimal.Parse(sheet.Cells[i, 5].Value?.ToString()),
-            //             Close = decimal.Parse(sheet.Cells[i, 6].Value?.ToString()),
-            //             CloseAdjusted = decimal.Parse(sheet.Cells[i, 7].Value?.ToString()),
-            //             Volume = int.Parse(sheet.Cells[i, 8].Value?.ToString()),
-            //             SplitCoefficient = decimal.Parse(sheet.Cells[i, 9].Value?.ToString())
-            //         };
-
-            //         stockPrices.Add(stockPrice);
-            //     }
-            // }
-
-
-            using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
+            for (int row = 2; row <= rowCount; row++)
             {
-                var sheet = package.Workbook.Worksheets["stock_prices"];
+                var dd = sheet.Cells[row, 2].Value?.ToString();
+                var d = double.TryParse(dd, out double numericDate) ? numericDate : DateTime.Now.ToOADate();
 
-                var rowCount = sheet.Dimension.Rows;
-                for (int i = 2; i <= rowCount; i++)
+                var preVolume = int.TryParse(sheet.Cells[row, 8].Value?.ToString(), out var openResult) ? openResult : 0;
+                var symbol = sheet.Cells[row, 1].Value?.ToString() ?? "N/A";
+                var date = DateTime.FromOADate(d);
+                var open = CheckValue(sheet.Cells[row, 3].Value?.ToString());
+                var high = CheckValue(sheet.Cells[row, 4].Value?.ToString());
+                var low = CheckValue(sheet.Cells[row, 5].Value?.ToString());
+                var close = CheckValue(sheet.Cells[row, 6].Value?.ToString());
+                var closeAdjusted = CheckValue(sheet.Cells[row, 7].Value?.ToString());
+                var volume = preVolume;
+                var splitCoefficient = CheckValue(sheet.Cells[row, 9].Value?.ToString());
+
+                var stockPrice = new StockPrice
                 {
-                    var symbol = sheet.Cells[i, 1].Value?.ToString();
-                    var dateValue = sheet.Cells[i, 2].Value;
-                    var openValue = sheet.Cells[i, 3].Value;
-                    var highValue = sheet.Cells[i, 4].Value;
-                    var lowValue = sheet.Cells[i, 5].Value;
-                    var closeValue = sheet.Cells[i, 6].Value;
-                    var closeAdjustedValue = sheet.Cells[i, 7].Value;
-                    var volumeValue = sheet.Cells[i, 8].Value;
-                    var splitCoefficientValue = sheet.Cells[i, 9].Value;
+                    Symbol = symbol,
+                    Date = date,
+                    Open = open,
+                    High = high,
+                    Low = low,
+                    Close = close,
+                    CloseAdjusted = closeAdjusted,
+                    Volume = volume,
+                    SplitCoefficient = splitCoefficient
+                };
 
-                    // Skip the row if any of the required values are null or cannot be parsed
-                    if (string.IsNullOrEmpty(symbol) ||
-                        dateValue == null ||
-                        openValue == null ||
-                        highValue == null ||
-                        lowValue == null ||
-                        closeValue == null ||
-                        closeAdjustedValue == null ||
-                        volumeValue == null ||
-                        splitCoefficientValue == null)
-                    {
-                        continue;
-                    }
-                    // var stockPrice = new StockPrice();
-                    // if(dateValue.ToString() == "36528"){
-                    //     stockPrice  = new StockPrice{
-                    //         Symbol = symbol,
-                    //     Date = DateTime.Parse("01/01/1900"),
-                    //     Open = decimal.Parse(openValue.ToString()),
-                    //     High = decimal.Parse(highValue.ToString()),
-                    //     Low = decimal.Parse(lowValue.ToString()),
-                    //     Close = decimal.Parse(closeValue.ToString()),
-                    //     CloseAdjusted = decimal.Parse(closeAdjustedValue.ToString()),
-                    //     Volume = int.Parse(volumeValue.ToString()),
-                    //     SplitCoefficient = decimal.Parse(splitCoefficientValue.ToString())
-                    //     } ;
-                    //     //stock = faultyStock;
-                    // }
-                    // else {
-                    var stockPrice = new StockPrice
-                    {
-                        Symbol = symbol,
-                        Date = DateTime.Parse(dateValue.ToString()),
-                        Open = decimal.Parse(openValue.ToString()),
-                        High = decimal.Parse(highValue.ToString()),
-                        Low = decimal.Parse(lowValue.ToString()),
-                        Close = decimal.Parse(closeValue.ToString()),
-                        CloseAdjusted = decimal.Parse(closeAdjustedValue.ToString()),
-                        Volume = int.Parse(volumeValue.ToString()),
-                        SplitCoefficient = decimal.Parse(splitCoefficientValue.ToString())
-                    };
-
-                    // Parse the values and create a StockPrice object
-
-                    Console.WriteLine(stockPrice);
-                    stockPrices.Add(stockPrice);
-                }
+                stockPrices.Add(stockPrice);
             }
+        }
 
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            Console.WriteLine("Symbol: " + stock.Symbol + "Date: " + stock.Date);
-        }
         return stockPrices;
+    }
+    private decimal CheckValue(string? v)
+    {
+        var openValue = v;
+        return decimal.TryParse(openValue, out var openResult) ? openResult : 0;
+
     }
 
     // Implement other data loading methods for dividends and earnings

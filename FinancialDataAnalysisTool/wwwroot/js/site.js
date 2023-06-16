@@ -3,17 +3,17 @@
 
 // Write your JavaScript code.
 // Get the data from the server
-var graphData = Html.Raw(Json.Serialize(Model));
+// var graphData = this.Html.Raw(Json.Serialize(Model));
 
-// Create the graph
-var graphContainer = document.getElementById('graphContainer');
-var graph = new ScottPlot.Plot(graphContainer);
-graph.PlotSignal(graphData.data, graphData.sampleRate);
+// // Create the graph
+// var graphContainer = document.getElementById('graphContainer');
+// var graph = new ScottPlot.Plot(graphContainer);
+// graph.PlotSignal(graphData.data, graphData.sampleRate);
 
-// Optional: Customize the graph properties
-graph.Title = 'My Graph';
-graph.XLabel = 'X-Axis';
-graph.YLabel = 'Y-Axis';
+// // Optional: Customize the graph properties
+// graph.Title = 'My Graph';
+// graph.XLabel = 'X-Axis';
+// graph.YLabel = 'Y-Axis';
 
-// Render the graph
-graph.Render();
+// // Render the graph
+// graph.Render();

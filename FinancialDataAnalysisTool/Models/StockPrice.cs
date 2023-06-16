@@ -1,7 +1,10 @@
-namespace FinancialDataAnalysisTool.Models;
+namespace FinancialDataAnalysisTool.Models;using System;
+using System.ComponentModel.DataAnnotations;
 public class StockPrice
 {
-    public string? Symbol { get; set; }
+    public string Symbol { get; set; } = string.Empty;
+     [DataType(DataType.Date)]
+    [DisplayFormat(DataFormatString = "{0:MM/dd/yyyy}", ApplyFormatInEditMode = true)]
     public DateTime Date { get; set; }
     public decimal Open { get; set; }
     public decimal High { get; set; }
