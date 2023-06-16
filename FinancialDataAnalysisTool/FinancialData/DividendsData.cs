@@ -5,16 +5,17 @@ namespace FinancialDataAnalysisTool.FinancialData;
 public class DividendsData
 {
     private readonly Plugins _plugins = new Plugins();
-      public List<Dividends> LoadDividends(MasterDataPath masterDataPath)
+      public async Task< List<Dividends>> LoadDividends(MasterDataPath masterDataPath)
     {
         List<Dividends> dividendsList = new List<Dividends>();
-
+         await Task.Run(() =>
+    {
         using (var package = new ExcelPackage(new FileInfo(masterDataPath.MasterPath)))
         {
             var sheet = package.Workbook.Worksheets["dividends"];
             var rowCount = sheet.Dimension.Rows;
 
-            for (int row = 2; row <= rowCount; row++) // Assuming data starts from the second row
+            for (int row = 2; row <= rowCount; row++) 
             {
                 string symbol = sheet.Cells[row, 1].Value?.ToString() ?? "N/A";
                 DateTime date = _plugins.FixDate(sheet.Cells[row, 2].Value?.ToString()??"N/A");
@@ -30,6 +31,8 @@ public class DividendsData
                 dividendsList.Add(dividend);
             }
         }
+    });
+       
 
         return dividendsList;
     }

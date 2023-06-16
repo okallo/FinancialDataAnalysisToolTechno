@@ -14,6 +14,8 @@ public class Plugins
         var d =double.TryParse(date, out double numericDate) ? numericDate : DateTime.Now.ToOADate();
         return DateTime.FromOADate(d);
     }
+    public DateTime SortDate(string d){
+        return DateTime.TryParse(d, out var date) ? date : DateTime.Now;    }
 
     public List<ChartData> PrepareChartData(List<StockPrice> stockPrices)
     {
@@ -35,11 +37,12 @@ public class Plugins
 
     public List<StockPrice> FilterDataByTime(List<StockPrice> stockPrices, string symbol, string startDate, string endDate)
     {
+        
         // Filter data by symbol, start date, and end date
         var filteredData = stockPrices.Where(s =>
             s.Symbol == symbol &&
-            s.Date >= DateTime.Parse(startDate) &&
-            s.Date <= DateTime.Parse(endDate)
+            s.Date >= SortDate(startDate) &&
+            s.Date <= SortDate(endDate)
         ).ToList();
         return filteredData;
     }
