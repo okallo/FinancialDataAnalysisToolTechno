@@ -15,6 +15,7 @@ public class HomeController : Controller
     private readonly string stockPricesPath = "./stock_prices.xlsx";
     private readonly string dividendsPath = "./dividents.xlsx";
     private readonly string earningsPath = "./earnings.xlsx";
+    private readonly string masterDataPath = "./stock_prices_latest.xlsx";
 
     public HomeController(ILogger<HomeController> logger)
     {
@@ -261,24 +262,88 @@ public class HomeController : Controller
         }
         return symbols;
     }
-
-    private List<StockPrice> LoadStockPrices()
+    // Implement other data loading methods for dividends and earnings
+    private List<Earnings> LoadEarnings()
     {
-        var stockPrices = new List<StockPrice>();
+        var earnings = new List<Earnings>();
 
         using (var package = new ExcelPackage(new FileInfo(stockPricesPath)))
         {
-            var sheet = package.Workbook.Worksheets["stock_prices"];
+            var sheet = package.Workbook.Worksheets["earnings"];
             var rowCount = sheet.Dimension.Rows;
 
             for (int row = 2; row <= rowCount; row++)
             {
-                var dd = sheet.Cells[row, 2].Value?.ToString();
-                var d = double.TryParse(dd, out double numericDate) ? numericDate : DateTime.Now.ToOADate();
+                var preQuarter = int.TryParse(sheet.Cells[row, 3].Value?.ToString(), out var openResult) ? openResult : 0;
+                var preRelease = TimeSpan.TryParse(sheet.Cells[row, 6].Value?.ToString(), out var res)? res:TimeSpan.FromHours(1);
+                string symbol = sheet.Cells[row, 1].Value?.ToString() ?? "N/A";
+                DateTime date = FixDate(sheet.Cells[row, 2].Value?.ToString()??"N/A");
+                int quarter = preQuarter;
+                decimal epsEstimate = CheckValue(sheet.Cells[row, 4].Value?.ToString());
+                decimal eps = CheckValue(sheet.Cells[row, 5].Value?.ToString());
+                TimeSpan releaseTime= preRelease;
+
+                var earning = new Earnings
+                {
+                    Symbol = symbol,
+                    Date = date,
+                    Quarter = quarter,
+                    EpsEstimate = epsEstimate,
+                    Eps = eps,
+                    ReleaseTime = releaseTime
+                };
+
+                earnings.Add(earning);
+            }
+        }
+
+        return earnings;
+    }
+    private List<Dividends> LoadDividends()
+    {
+        List<Dividends> dividendsList = new List<Dividends>();
+
+        using (var package = new ExcelPackage(new FileInfo(masterDataPath)))
+        {
+            var sheet = package.Workbook.Worksheets["dividends"];
+            var rowCount = sheet.Dimension.Rows;
+
+            for (int row = 2; row <= rowCount; row++) // Assuming data starts from the second row
+            {
+                string symbol = sheet.Cells[row, 1].Value?.ToString() ?? "N/A";
+                DateTime date = FixDate(sheet.Cells[row, 2].Value?.ToString()??"N/A");
+                decimal amount = CheckValue(sheet.Cells[row, 3].Value?.ToString());
+
+                Dividends dividend = new Dividends
+                {
+                    Symbol = symbol,
+                    Date = date,
+                    Amount = amount
+                };
+
+                dividendsList.Add(dividend);
+            }
+        }
+
+        return dividendsList;
+    }
+    private List<StockPrice> LoadStockPrices()
+    {
+        var stockPrices = new List<StockPrice>();
+
+        using (var package = new ExcelPackage(new FileInfo(masterDataPath)))
+        {
+            var sheet = package.Workbook.Worksheets["stock_prices_latest"];
+            var rowCount = sheet.Dimension.Rows;
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                // var dd = sheet.Cells[row, 2].Value?.ToString();
+                // var d = double.TryParse(dd, out double numericDate) ? numericDate : DateTime.Now.ToOADate();
 
                 var preVolume = int.TryParse(sheet.Cells[row, 8].Value?.ToString(), out var openResult) ? openResult : 0;
                 var symbol = sheet.Cells[row, 1].Value?.ToString() ?? "N/A";
-                var date = DateTime.FromOADate(d);
+                var date = FixDate(sheet.Cells[row, 2].Value?.ToString()??"N/A");
                 var open = CheckValue(sheet.Cells[row, 3].Value?.ToString());
                 var high = CheckValue(sheet.Cells[row, 4].Value?.ToString());
                 var low = CheckValue(sheet.Cells[row, 5].Value?.ToString());
@@ -313,7 +378,10 @@ public class HomeController : Controller
 
     }
 
-    // Implement other data loading methods for dividends and earnings
+    private DateTime FixDate(string date){
+        var d =double.TryParse(date, out double numericDate) ? numericDate : DateTime.Now.ToOADate();
+        return DateTime.FromOADate(d);
+    }
 
     private List<ReturnData> CalculateReturns(List<StockPrice> stockPrices, string symbol)
     {
