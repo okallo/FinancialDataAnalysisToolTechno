@@ -1,0 +1,10 @@
+@model ChartData
+<div>
+    <h5>Char Render</h5>
+    <div id="chartContainer">
+        @foreach (var dataPoint in Model.DataPoints)
+        {
+            <div>@dataPoint.Date - @dataPoint.Value</div>
+        }
+    </div>
+</div>

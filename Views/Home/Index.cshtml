@@ -1,0 +1,82 @@
+﻿@model DataViewModel
+
+@{
+    ViewBag.Title = "Stock Data";
+}
+
+<h2>Stock Data</h2>
+
+<div>
+    <label for="symbol">Symbol:</label>
+    <select id="symbol">
+        @foreach (var symbol in Model.Symbols)
+        {
+            <option value="@symbol">@symbol</option>
+        }
+    </select>
+</div>
+
+<div>
+    <label for="startDate">Start Date:</label>
+    <input type="text" id="startDate" placeholder="01/03/2000" />
+</div>
+
+<div>
+    <label for="endDate">End Date:</label>
+    <input type="text" id="endDate" placeholder="01/24/2018" />
+</div>
+<div class="d-flex flex-flow-row">
+<button onclick="filterByTime()">Filter by Time</button>
+<button onclick="filterBySymbol()">Filter by Symbol</button>
+ </div>
+
+<div id="chartContainer">
+    @await Component.InvokeAsync("Chart")
+</div>
+
+@section scripts {
+    <script>
+        function filterByTime() {
+            var symbol = $('#symbol').val();
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+
+            $.ajax({
+                url: '@Url.Action("FilterByTime")',
+                type: 'POST',
+                data: {
+                    symbol: symbol,
+                    startDate: startDate,
+                    endDate: endDate
+                },
+                success: function (data) {
+                    // Update the chart with the filtered data
+                    console.log(data);
+                    var chartCanvas = document.getElementById('chartCanvas');
+                    var chart = Chart.getChart(chartCanvas);
+                    chart.data.datasets = data;
+                    chart.update();
+                }
+            });
+        }
+
+        function filterBySymbol() {
+            var symbols = $('#symbol').val();
+
+            $.ajax({
+                url: '@Url.Action("FilterBySymbol")',
+                type: 'POST',
+                data: {
+                    symbols: symbols
+                },
+                success: function (data) {
+                    // Update the chart with the filtered data
+                    var chartCanvas = document.getElementById('chartCanvas');
+                    var chart = Chart.getChart(chartCanvas);
+                    chart.data.datasets = data;
+                    chart.update();
+                }
+            });
+        }
+    </script>
+}

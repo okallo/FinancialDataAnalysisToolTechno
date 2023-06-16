@@ -1,0 +1,52 @@
+@model Dictionary<string, List<double>>
+
+<h1>Data Analysis</h1>
+
+<form method="post" action="/Data/Graph">
+    <label for="asset">Select Asset:</label>
+    <select id="asset" name="selectedAsset">
+        @foreach (var item in Model)
+        {
+            <option value="@item.Key">@item.Key</option>
+        }
+    </select>
+
+    <br>
+
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" name="startDate">
+
+    <br>
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" name="endDate">
+
+    <br>
+
+    <button type="submit">Generate Graph</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Asset</th>
+            <th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>
+                    <ul>
+                        @foreach (var value in item.Value)
+                        {
+                            <li>@value</li>
+                        }
+                    </ul>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

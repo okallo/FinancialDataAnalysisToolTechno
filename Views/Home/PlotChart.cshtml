@@ -1,0 +1,86 @@
+﻿@model ChartDataViewModel
+
+@{
+    ViewBag.Title = "Chart";
+    Layout = null;
+}
+
+<div>
+    <canvas id="chart"></canvas>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        var volatilityData = @Html.Raw(Model.VolatilityData);
+        var correlationData = @Html.Raw(Model.CorrelationData);
+        var returnsData = @Html.Raw(Model.ReturnsData);
+
+        var ctx = document.getElementById('chart').getContext('2d');
+
+        // Prepare chart datasets
+        var datasets = [];
+
+        volatilityData.forEach(function (data) {
+            var dataset = {
+                label: 'Volatility - ' + data.Symbol,
+                data: data.DataPoints.map(function (dp) { return { x: dp.Label, y: dp.Value }; }),
+                borderColor: 'blue',
+                fill: false
+            };
+            datasets.push(dataset);
+        });
+
+        correlationData.forEach(function (data) {
+            var dataset = {
+                label: 'Correlation - ' + data.Symbol,
+                data: data.DataPoints.map(function (dp) { return { x: dp.Label, y: dp.Value }; }),
+                borderColor: 'red',
+                fill: false
+            };
+            datasets.push(dataset);
+        });
+
+        returnsData.forEach(function (data) {
+            var dataset = {
+                label: 'Returns - ' + data.Symbol,
+                data: data.DataPoints.map(function (dp) { return { x: dp.Label, y: dp.Value }; }),
+                borderColor: 'green',
+                fill: false
+            };
+            datasets.push(dataset);
+        });
+
+        // Create the chart
+        var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            displayFormats: {
+                                day: 'MMM DD'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

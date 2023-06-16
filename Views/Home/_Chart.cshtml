@@ -1,0 +1,49 @@
+
+@model List<ChartData>
+
+<canvas id="chartCanvas"></canvas>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function () {
+            var chartData = @Html.Raw(Model);
+
+            // Prepare chart configuration
+            var chartConfig = {
+                type: 'line',
+                data: {
+                    datasets: chartData
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM D'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Price'
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Render the chart
+            var chartCanvas = document.getElementById('chartCanvas');
+            var chart = new Chart(chartCanvas, chartConfig);
+        });
+    </script>
+}
